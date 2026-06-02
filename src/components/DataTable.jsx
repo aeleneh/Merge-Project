@@ -14,7 +14,7 @@ import {
     TableHeader, 
     TableRow,
 } from '@/components/ui/table'
-import MergerModal from './MergerModal'
+import MergeDrawer from './MergeDrawer'
 import { useNavigate } from 'react-router-dom'
 
 const DataTable = () => {
@@ -183,34 +183,17 @@ const DataTable = () => {
         setShowMergerModal(true)
     }
 
-    const handleConfirmMerge = (user1, user2) => {
-        const mergedUser = {
-            ...user1,
-            name: { first: user1.name.first, last: user2.name.last },
-            email: user1.email,
-            phone: user2.phone,
-            picture: user1.picture,
-            location: user1.location,
-            registered: user1.registered,
-            dob: user1.dob,
-            login: { uuid: crypto.randomUUID() },
-        }
+    const handleConfirmMerge = (user1, user2, mergedUser) => {
+    const selectedIds = new Set([user1.login.uuid, user2.login.uuid])
+    const remaining = data.filter(u => !selectedIds.has(u.login.uuid))
+    const newData = [mergedUser, ...remaining]
 
-            const selectedIds = new Set(
-            table.getSelectedRowModel().rows.map(r => r.original.login.uuid)
-            )
-            const remaining = data.filter(u => !selectedIds.has(u.login.uuid))
-            const newData = [mergedUser, ...remaining]
-
-            setData(newData)
-
-
-            localStorage.setItem('users', JSON.stringify(newData))
-
-            setRowSelection({})
-            setShowMergerModal(false)
-            navigate('/merged-user', { state: { mergedUser } })
-        }
+    setData(newData)
+    localStorage.setItem('users', JSON.stringify(newData))
+    setRowSelection({})
+    setShowMergerModal(false)
+    navigate('/merged-user', { state: { mergedUser } })
+}
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
@@ -370,12 +353,13 @@ const DataTable = () => {
 
             {/* Merger Modal */}
             {showMergerModal && (
-                <MergerModal
-                    users={table.getSelectedRowModel().rows.map(r => r.original)}
-                    onClose={() => setShowMergerModal(false)}
-                    onConfirm={handleConfirmMerge}
-                />
-            )}
+            <MergeDrawer
+                users={table.getSelectedRowModel().rows.map(r => r.original)}
+                allUsers={data}
+                onClose={() => setShowMergerModal(false)}
+                onConfirm={handleConfirmMerge}
+            />
+)}
         </div>
     )
 }
